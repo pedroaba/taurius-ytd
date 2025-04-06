@@ -53,6 +53,7 @@ const api = {
   },
   updateTaskbarBadge: async (count: number) => {
     await ipcRenderer.sendSync('downloadCount', count)
+    await ipcRenderer.send('video:download-count', count)
   },
   downloadVideo: async ({
     videoUrl,

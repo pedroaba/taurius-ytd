@@ -4,6 +4,7 @@ import path from 'path'
 import ytdl from '@distube/ytdl-core'
 import icon from '../../../resources/icon.png?asset'
 import { dispatchNotification } from '../utils/dispatch-notification'
+import { platform } from '@electron-toolkit/utils'
 
 export function setVideoListeners() {
   ipcMain.handle('video:get-info', async (_, url: string) => {
@@ -25,6 +26,12 @@ export function setVideoListeners() {
       return ytdl.validateURL(url)
     } catch (error) {
       return false
+    }
+  })
+
+  ipcMain.on('video:download-count', (_, count: number) => {
+    if (!platform.isWindows) {
+      app.setBadgeCount(count)
     }
   })
 
