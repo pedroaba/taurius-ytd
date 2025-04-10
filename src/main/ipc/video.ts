@@ -58,6 +58,8 @@ export function setVideoListeners() {
             })
           },
           onProgress: ({ progress, speed, videoInfo }) => {
+            mainWindow.setProgressBar(Number(progress) / 100)
+
             mainWindow.webContents.send('video:download-progress', {
               videoTitle: videoInfo.videoDetails.title,
               type,
@@ -68,6 +70,7 @@ export function setVideoListeners() {
             })
           },
           onError: () => {
+            mainWindow.setProgressBar(-1)
             dispatchNotification({
               window: event.sender,
               title: 'Taurius-YT',
@@ -77,6 +80,7 @@ export function setVideoListeners() {
             })
           },
           onFinish: ({ videoInfo, videoFormat }) => {
+            mainWindow.setProgressBar(-1)
             mainWindow.webContents.send('video:download-finished', {
               downloadId,
               videoTitle: videoInfo.videoDetails.title,
