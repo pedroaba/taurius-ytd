@@ -21,6 +21,7 @@ import {
 import { useAtom, useSetAtom } from 'jotai'
 import { useState } from 'react'
 import { toast } from 'sonner'
+import { Label } from './ui/label'
 
 export function DownloadModal() {
   const [videoInfo] = useAtom(videoInfoAtom)
@@ -28,6 +29,8 @@ export function DownloadModal() {
   const [qualityOptions] = useAtom(qualityOptionsAtom)
 
   const [selectedQuality, setSelectedQuality] = useState<string | null>(null)
+  const [videoQuality, setVideoQuality] = useState<string | null>(null)
+  const [audioQuality, setAudioQuality] = useState<string | null>(null)
 
   const addDownloadToQueue = useSetAtom(addDownloadToQueueAtom)
 
@@ -37,9 +40,22 @@ export function DownloadModal() {
       return
     }
 
+    const downloadId = `video_${crypto.randomUUID()}`
+
+    addDownloadToQueue(
+      {
+        videoTitle: videoInfo?.videoDetails.title,
+        type: 'video',
+        status: 'pending',
+        progress: 0,
+        speed: 0,
+      },
+      downloadId,
+    )
+
     await window.api.downloadVideo({
       videoUrl: videoInfo?.videoDetails.video_url,
-      downloadId: `video_${crypto.randomUUID()}`,
+      downloadId,
       quality: selectedQuality,
     })
 
@@ -79,33 +95,6 @@ export function DownloadModal() {
     // }
   }
 
-  function getFormatOfVideo() {
-    const formats = videoInfo?.formats.reduce(
-      (acc: Map<string, string>, format) => {
-        if (!acc.has(format.qualityLabel)) {
-          acc.set(format.qualityLabel, format.qualityLabel)
-        }
-
-        return acc
-      },
-      new Map<string, string>(),
-    )
-
-    return formats
-      ?.values()
-      .toArray()
-      .filter((format) => format)
-      .sort((a, b) => {
-        const aQuality = a?.split(' ')[0]
-        const bQuality = b?.split(' ')[0]
-
-        if (!aQuality || !bQuality) {
-          return 0
-        }
-
-        return parseInt(aQuality) - parseInt(bQuality)
-      })
-  }
   return (
     <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
       <DialogContent className="bg-zinc-900 border-zinc-800 w-10/12">
@@ -137,40 +126,162 @@ export function DownloadModal() {
               className="w-full h-96 rounded-md"
             ></iframe>
             <div className="w-full h-full space-y-2">
-              <Select
-                value={selectedQuality || undefined}
-                onValueChange={setSelectedQuality}
-              >
-                <SelectTrigger className="w-full border-zinc-800 bg-zinc-950 data-[placeholder]:text-zinc-400">
-                  <SelectValue
-                    className=""
-                    placeholder="Selecione a qualidade do video: Ex. 1080p60"
-                  />
-                </SelectTrigger>
-                <SelectContent className="bg-zinc-950 text-zinc-50 border-zinc-800">
-                  {qualityOptions?.map((format) => {
-                    return (
-                      <SelectItem
-                        key={format.quality}
-                        className="data-[highlighted]:bg-zinc-800 data-[highlighted]:text-zinc-50"
-                        value={format.quality}
-                      >
-                        {format.qualityLabel}
-                        {format.fps}
-                      </SelectItem>
-                    )
-                  })}
+              <div>
+                <Label className="text-sm text-zinc-300">
+                  Qualidade audio e video!!
+                </Label>
+                <Select
+                  value={selectedQuality || undefined}
+                  onValueChange={(value) => {
+                    if (value === 'custom') {
+                      setVideoQuality(null)
+                      setAudioQuality(null)
+                    }
 
-                  {getFormatOfVideo()?.length === 0 && (
-                    <div className="w-full h-32 flex flex-col gap-4 justify-center items-center">
-                      <VideoOff className="size-6 text-zinc-400" />
-                      <span className="text-sm text-zinc-400">
-                        Nenhum formato de video foi encontrado
-                      </span>
-                    </div>
-                  )}
-                </SelectContent>
-              </Select>
+                    setSelectedQuality(value)
+                  }}
+                >
+                  <SelectTrigger className="w-full border-zinc-800 bg-zinc-950 data-[placeholder]:text-zinc-400">
+                    <SelectValue
+                      className=""
+                      placeholder="Selecione a qualidade do video: Ex. 1080p60"
+                    />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-950 text-zinc-50 border-zinc-800">
+                    {qualityOptions?.map((format) => {
+                      return (
+                        <SelectItem
+                          key={format.quality}
+                          className="data-[highlighted]:bg-zinc-800 data-[highlighted]:text-zinc-50"
+                          value={format.quality}
+                        >
+                          {format.qualityLabel}
+                          {format.fps}
+                        </SelectItem>
+                      )
+                    })}
+
+                    <SelectItem
+                      value="lowest"
+                      className="data-[highlighted]:bg-zinc-800 data-[highlighted]:text-zinc-50"
+                    >
+                      Baixa
+                    </SelectItem>
+                    <SelectItem
+                      value="high"
+                      className="data-[highlighted]:bg-zinc-800 data-[highlighted]:text-zinc-50"
+                    >
+                      Alta
+                    </SelectItem>
+                    <SelectItem
+                      value="hightest"
+                      className="data-[highlighted]:bg-zinc-800 data-[highlighted]:text-zinc-50"
+                    >
+                      Excelente
+                    </SelectItem>
+                    <SelectItem
+                      value="custom"
+                      className="data-[highlighted]:bg-zinc-800 data-[highlighted]:text-zinc-50"
+                    >
+                      Customizado
+                    </SelectItem>
+
+                    {qualityOptions?.length === 0 && (
+                      <div className="w-full h-32 flex flex-col gap-4 justify-center items-center">
+                        <VideoOff className="size-6 text-zinc-400" />
+                        <span className="text-sm text-zinc-400">
+                          Nenhum formato de video foi encontrado
+                        </span>
+                      </div>
+                    )}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {selectedQuality === 'custom' && (
+                <div className="grid grid-cols-1 space-y-2">
+                  <div>
+                    <Label className="text-sm text-zinc-300">
+                      Qualidade de video
+                    </Label>
+                    <Select
+                      value={videoQuality || undefined}
+                      onValueChange={setVideoQuality}
+                    >
+                      <SelectTrigger className="w-full border-zinc-800 bg-zinc-950 data-[placeholder]:text-zinc-400">
+                        <SelectValue placeholder="Selecione o tipo de qualidade de video" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-zinc-950 text-zinc-50 border-zinc-800">
+                        <SelectItem
+                          value="hightest"
+                          className="data-[highlighted]:bg-zinc-800 data-[highlighted]:text-zinc-50"
+                        >
+                          Qualidade excelente
+                        </SelectItem>
+                        <SelectItem
+                          value="hightestvideo"
+                          className="data-[highlighted]:bg-zinc-800 data-[highlighted]:text-zinc-50"
+                        >
+                          Qualidade alta de video
+                        </SelectItem>
+                        <SelectItem
+                          value="lowest"
+                          className="data-[highlighted]:bg-zinc-800 data-[highlighted]:text-zinc-50"
+                        >
+                          Qualidade baixa
+                        </SelectItem>
+                        <SelectItem
+                          value="lowestvideo"
+                          className="data-[highlighted]:bg-zinc-800 data-[highlighted]:text-zinc-50"
+                        >
+                          Qualidade baixa de video
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label className="text-sm text-zinc-300">
+                      Qualidade de audio
+                    </Label>
+                    <Select
+                      value={audioQuality || undefined}
+                      onValueChange={setAudioQuality}
+                    >
+                      <SelectTrigger className="w-full border-zinc-800 bg-zinc-950 data-[placeholder]:text-zinc-400">
+                        <SelectValue placeholder="Selecione o tipo de qualidade de audio" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-zinc-950 text-zinc-50 border-zinc-800">
+                        <SelectItem
+                          value="hightest"
+                          className="data-[highlighted]:bg-zinc-800 data-[highlighted]:text-zinc-50"
+                        >
+                          Qualidade excelente
+                        </SelectItem>
+                        <SelectItem
+                          value="hightestaudio"
+                          className="data-[highlighted]:bg-zinc-800 data-[highlighted]:text-zinc-50"
+                        >
+                          Qualidade excelente de audio
+                        </SelectItem>
+
+                        <SelectItem
+                          value="lowest"
+                          className="data-[highlighted]:bg-zinc-800 data-[highlighted]:text-zinc-50"
+                        >
+                          Qualidade baixa
+                        </SelectItem>
+                        <SelectItem
+                          value="lowestaudio"
+                          className="data-[highlighted]:bg-zinc-800 data-[highlighted]:text-zinc-50"
+                        >
+                          Qualidade baixa de audio
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
+
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
                 <Button className="w-full" onClick={handleDownloadVideo}>
                   <FileVideo2 className="size-4" />

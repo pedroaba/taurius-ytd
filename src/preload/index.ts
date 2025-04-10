@@ -46,9 +46,10 @@ const api = {
     videoUrl: string
     downloadId: string
   }) => {
-    await ipcRenderer.send('video:download-mp3', {
+    await ipcRenderer.send('video:download', {
       videoUrl,
       downloadId,
+      type: 'audio',
     })
   },
   updateTaskbarBadge: async (count: number) => {
@@ -64,10 +65,11 @@ const api = {
     downloadId: string
     quality: string
   }) => {
-    await ipcRenderer.send('video:download-video', {
+    await ipcRenderer.send('video:download', {
       videoUrl,
       downloadId,
       quality,
+      type: 'video',
     })
   },
 }
